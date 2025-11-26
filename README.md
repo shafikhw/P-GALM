@@ -51,6 +51,20 @@ P-GALM is a research prototype that connects the ScienceQA dataset with a verbal
     -   View the results in the UI (Answer Posterior, Latent Variables).
     -   **Monitor the terminal** where `server.py` is running to see the full JSON response and detailed logs.
 
+### Evaluation
+
+To evaluate the system's performance on a sample of the dataset:
+
+1.  Open the Jupyter Notebook:
+    ```bash
+    jupyter notebook evaluate_pgalm.ipynb
+    ```
+2.  Run the cells to:
+    -   Load the validation dataset.
+    -   Select a random sample of questions.
+    -   Run the vPGM inference pipeline.
+    -   Calculate accuracy and analyze reasoning quality.
+
 ## How It Works
 
 P-GALM implements a **Verbalized Probabilistic Graphical Model (vPGM)**. Instead of using traditional numerical tables for Conditional Probability Distributions (CPDs), it uses an LLM to generate the posterior distributions directly based on textual instructions and observed data.

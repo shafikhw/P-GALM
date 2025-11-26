@@ -104,3 +104,16 @@ Special care is taken to handle multimodal data. The backend sanitizes inputs (e
 
 ### 4.3. Extensibility
 The framework is template-driven (`prompt_template.json`). New graph structures (e.g., a 2-variable simplified model or a domain-specific medical model) can be added simply by defining a new template in the JSON file, without changing the core Python code.
+
+## 5. Evaluation Methodology
+
+To validate the P-GALM framework, an evaluation notebook (`evaluate_pgalm.ipynb`) is provided. The evaluation protocol is as follows:
+
+1.  **Sampling**: A random subset of questions is selected from the ScienceQA validation split.
+2.  **Inference**: The vPGM pipeline is executed for each question, generating the full graph (latent variables + answer).
+3.  **Answer Extraction**: The system extracts the option with the highest probability from the `answer_posterior` node.
+4.  **Metric Calculation**:
+    *   **Accuracy**: Percentage of correctly answered questions.
+    *   **Reasoning Quality**: Qualitative inspection of the generated justifications for latent variables (e.g., did the model correctly identify the relevant context?).
+
+This allows for both quantitative performance assessment and qualitative error analysis, leveraging the interpretability of the vPGM structure.
