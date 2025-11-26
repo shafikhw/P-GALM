@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScienceQA vPGM Explorer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar: Question List -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>ScienceQA</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search questions...">
+                </div>
+            </div>
+            <div id="questionList" class="question-list">
+                <!-- Questions will be injected here -->
+                <div class="loading">Loading questions...</div>
+            </div>
+            <div class="pagination">
+                <button id="prevPage" disabled>&lt;</button>
+                <span id="pageInfo">Page 1</span>
+                <button id="nextPage">&gt;</button>
+            </div>
+        </aside>
+
+        <!-- Main Content: Details & Inference -->
+        <main class="main-content">
+            <div id="emptyState" class="empty-state">
+                <h1>Select a question to begin</h1>
+                <p>Browse the list on the left to view details and run vPGM inference.</p>
+            </div>
+
+            <div id="detailView" class="detail-view hidden">
+                <header class="detail-header">
+                    <div class="meta-tags" id="metaTags">
+                        <!-- Tags injected here -->
+                    </div>
+                    <h1 id="questionText">Question Text</h1>
+                </header>
+
+                <div class="content-grid">
+                    <!-- Left Column: Observed Data -->
+                    <div class="card observed-card">
+                        <h3>Observed Data</h3>
+                        <div class="observed-content">
+                            <div id="choicesList" class="choices-list"></div>
+                            <div id="contextBox" class="context-box hidden">
+                                <h4>Context</h4>
+                                <p id="contextText"></p>
+                            </div>
+                            <div id="hintBox" class="hint-box hidden">
+                                <h4>Hint</h4>
+                                <p id="hintText"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Inference -->
+                    <div class="card inference-card">
+                        <div class="inference-header">
+                            <h3>vPGM Inference</h3>
+                            <button id="runInferenceBtn" class="btn-primary">
+                                <span>Run Inference</span>
+                            </button>
+                        </div>
+
+                        <div id="inferenceResult" class="inference-result hidden">
+                            <div class="result-section">
+                                <h4>Answer Posterior</h4>
+                                <div id="answerPosterior" class="posterior-chart"></div>
+                            </div>
+
+                            <div class="result-section">
+                                <h4>Latent Variables</h4>
+                                <div id="latentPosteriors" class="latents-container"></div>
+                            </div>
+
+                            <div class="result-section" style="display: none;">
+                                <h4>Raw JSON</h4>
+                                <pre id="rawJson" class="code-block"></pre>
+                            </div>
+                        </div>
+
+                        <div id="inferenceLoading" class="inference-loading hidden">
+                            <div class="spinner"></div>
+                            <p>Running inference... Check terminal for logs.</p>
+                        </div>
+
+                        <div id="inferenceError" class="inference-error hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

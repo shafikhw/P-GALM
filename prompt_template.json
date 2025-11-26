@@ -1,0 +1,427 @@
+{
+    "version": "0.1",
+    "task": "ScienceQA_verbalized_PGM",
+    "global_conventions": {
+      "description": "Templates for verbalized probabilistic graphical model (vPGM) representations of ScienceQA multiple choice questions. Intended for LLM agents that fill these templates, followed by validation and compilation into a formal Bayesian network JSON for a PGM inference engine.",
+      "answer_variable_name": "Y",
+      "answer_variable_role": "categorical_over_options",
+      "latent_state_space": ["very_low", "low", "medium", "high", "very_high"],
+      "probability_range": [0.0, 1.0],
+      "numeric_probability_precision": 3,
+      "require_text_justifications": true,
+      "scienceqa_observation_fields": [
+        "question_text",
+        "options",
+        "image_caption_optional",
+        "text_context_optional",
+        "lecture_optional",
+        "subject",
+        "topic",
+        "category",
+        "skill",
+        "grade"
+      ]
+    },
+    "templates": [
+      {
+        "id": "scienceqa_vpgm_4latent_generic",
+        "name": "ScienceQA vPGM with 4 latent variables (Z1..Z4)",
+        "based_on": "vPGM ScienceQA case study with 4 latent variables",
+        "applicability": {
+          "description": "Primary template for ScienceQA. Works for all question types regardless of modality. Observed input X aggregates all available signals: question, answer options, image caption or features, text context, lecture, and any retrieved external knowledge.",
+          "supports_modalities": {
+            "question_text": true,
+            "answer_options": true,
+            "image": "optional",
+            "text_context": "optional",
+            "lecture": "optional",
+            "retrieved_knowledge": "optional"
+          }
+        },
+        "observed_variables": [
+          {
+            "name": "X_question",
+            "role": "question_text",
+            "type": "string",
+            "description": "Natural language question from ScienceQA."
+          },
+          {
+            "name": "X_options",
+            "role": "answer_options",
+            "type": "list[string]",
+            "description": "List of candidate answer options (e.g. [\"A\", \"B\", \"C\", \"D\"] or full option texts)."
+          },
+          {
+            "name": "X_image_caption_optional",
+            "role": "image_caption_or_visual_features",
+            "type": "string_or_null",
+            "description": "Caption, OCR summary, or structured description of the associated image or diagram if present."
+          },
+          {
+            "name": "X_text_context_optional",
+            "role": "local_text_context",
+            "type": "string_or_null",
+            "description": "Short text passage or context field from ScienceQA if provided."
+          },
+          {
+            "name": "X_lecture_optional",
+            "role": "background_lecture",
+            "type": "string_or_null",
+            "description": "Lecture text that provides general background knowledge for the skill; often available in ScienceQA but may be omitted at test time."
+          },
+          {
+            "name": "X_retrieved_knowledge_optional",
+            "role": "external_knowledge",
+            "type": "string_or_null",
+            "description": "Optional chunk of external knowledge retrieved by a separate tool (for example web search or a knowledge base)."
+          },
+          {
+            "name": "meta_subject",
+            "role": "subject_label",
+            "type": "string",
+            "description": "Subject field from ScienceQA such as natural_science, social_science, or language_science."
+          },
+          {
+            "name": "meta_topic",
+            "role": "topic_label",
+            "type": "string",
+            "description": "Topic field from ScienceQA such as Physics, Biology, or Figurative_language."
+          },
+          {
+            "name": "meta_category",
+            "role": "category_label",
+            "type": "string",
+            "description": "Category field from ScienceQA such as Physical_and_chemical_change, Persuasive_strategies, etc."
+          },
+          {
+            "name": "meta_skill",
+            "role": "skill_label",
+            "type": "string",
+            "description": "Skill tag from ScienceQA describing the fine grained competency (for example identify_similes_and_metaphors, compare_physical_and_chemical_changes)."
+          },
+          {
+            "name": "meta_grade",
+            "role": "grade_level",
+            "type": "integer",
+            "description": "Approximate grade level of the question from ScienceQA."
+          }
+        ],
+        "latent_variables": [
+          {
+            "name": "Z1_relevance_assessment",
+            "states": ["very_low", "low", "medium", "high", "very_high"],
+            "description": "Relevance of all input data X (question, image caption, text context, lecture, retrieved knowledge) to the posed question. Captures how much of X is actually useful for solving the problem."
+          },
+          {
+            "name": "Z2_knowledge_quality",
+            "states": ["very_low", "low", "medium", "high", "very_high"],
+            "description": "Quality, adequacy, and reliability of knowledge derived from lecture, text context, and any external knowledge, conditioned on relevance."
+          },
+          {
+            "name": "Z3_question_clarity",
+            "states": ["very_low", "low", "medium", "high", "very_high"],
+            "description": "Clarity and interpretability of the question given the relevant data and available knowledge (for example whether key terms and quantities are well defined)."
+          },
+          {
+            "name": "Z4_logical_reasoning",
+            "states": ["very_low", "low", "medium", "high", "very_high"],
+            "description": "Quality of logical reasoning used to evaluate each answer option given the qualified knowledge and a clear understanding of the question."
+          }
+        ],
+        "graph_structure": {
+          "nodes": [
+            "X_question",
+            "X_options",
+            "X_image_caption_optional",
+            "X_text_context_optional",
+            "X_lecture_optional",
+            "X_retrieved_knowledge_optional",
+            "Z1_relevance_assessment",
+            "Z2_knowledge_quality",
+            "Z3_question_clarity",
+            "Z4_logical_reasoning",
+            "Y"
+          ],
+          "edges": [
+            ["X_question", "Z1_relevance_assessment"],
+            ["X_image_caption_optional", "Z1_relevance_assessment"],
+            ["X_text_context_optional", "Z1_relevance_assessment"],
+            ["X_lecture_optional", "Z1_relevance_assessment"],
+            ["X_retrieved_knowledge_optional", "Z1_relevance_assessment"],
+            ["X_question", "Z2_knowledge_quality"],
+            ["X_text_context_optional", "Z2_knowledge_quality"],
+            ["X_lecture_optional", "Z2_knowledge_quality"],
+            ["X_retrieved_knowledge_optional", "Z2_knowledge_quality"],
+            ["Z1_relevance_assessment", "Z3_question_clarity"],
+            ["Z2_knowledge_quality", "Z3_question_clarity"],
+            ["X_question", "Z3_question_clarity"],
+            ["Z2_knowledge_quality", "Z4_logical_reasoning"],
+            ["Z3_question_clarity", "Z4_logical_reasoning"],
+            ["X_question", "Z4_logical_reasoning"],
+            ["Z4_logical_reasoning", "Y"]
+          ],
+          "answer_node": "Y",
+          "answer_states_source": "X_options",
+          "informal_factorization": "P(Z1 | X) * P(Z2 | X) * P(Z3 | Z1, Z2, X) * P(Z4 | Z2, Z3, X) * P(Y | Z4)"
+        },
+        "verbal_cpd_templates": [
+          {
+            "id": "cpd_Z1_given_X",
+            "target": "Z1_relevance_assessment",
+            "given": [
+              "X_question",
+              "X_image_caption_optional",
+              "X_text_context_optional",
+              "X_lecture_optional",
+              "X_retrieved_knowledge_optional"
+            ],
+            "output_format": {
+              "state_probabilities": "dict[state -> float] that sum to 1.0 over the latent_state_space",
+              "justification": "short paragraph explaining why each state has that probability"
+            },
+            "verbal_pattern": "Analyze the question and all available context (image caption, text context, lecture, retrieved knowledge). Explain how relevant each piece is to answering the question, then output numerical probabilities over the states of Z1_relevance_assessment."
+          },
+          {
+            "id": "cpd_Z2_given_X",
+            "target": "Z2_knowledge_quality",
+            "given": [
+              "X_question",
+              "X_text_context_optional",
+              "X_lecture_optional",
+              "X_retrieved_knowledge_optional"
+            ],
+            "output_format": {
+              "state_probabilities": "dict[state -> float] that sum to 1.0",
+              "justification": "short paragraph describing reliability, completeness, and possible noise in the knowledge sources"
+            },
+            "verbal_pattern": "Assess how accurate, complete, and trustworthy the combined knowledge from lecture, text context, and retrieved knowledge is for solving the question. Then output probabilities over the states of Z2_knowledge_quality."
+          },
+          {
+            "id": "cpd_Z3_given_Z1_Z2_X",
+            "target": "Z3_question_clarity",
+            "given": [
+              "Z1_relevance_assessment",
+              "Z2_knowledge_quality",
+              "X_question"
+            ],
+            "output_format": {
+              "state_probabilities": "dict[state -> float] that sum to 1.0",
+              "justification": "short paragraph explaining whether the question is clear or ambiguous given relevant data and knowledge"
+            },
+            "verbal_pattern": "Using the relevance and knowledge quality assessments, evaluate how clearly the question is posed and whether a well prepared student could interpret it without confusion. Then output probabilities over the states of Z3_question_clarity."
+          },
+          {
+            "id": "cpd_Z4_given_Z2_Z3_X",
+            "target": "Z4_logical_reasoning",
+            "given": [
+              "Z2_knowledge_quality",
+              "Z3_question_clarity",
+              "X_question",
+              "X_options",
+              "X_image_caption_optional",
+              "X_text_context_optional"
+            ],
+            "output_format": {
+              "state_probabilities": "dict[state -> float] that sum to 1.0",
+              "justification": "short paragraph outlining the reasoning strategy (for example recall, comparison, causal reasoning, quantitative reasoning) and its reliability"
+            },
+            "verbal_pattern": "Perform step by step reasoning over the options using the available knowledge and a clear understanding of the question. Evaluate how strong and logically coherent this reasoning is overall, then output probabilities over the states of Z4_logical_reasoning."
+          },
+          {
+            "id": "cpd_Y_given_Z4",
+            "target": "Y",
+            "given": [
+              "Z4_logical_reasoning",
+              "X_options"
+            ],
+            "output_format": {
+              "option_probabilities": "dict[option_label_or_index -> float] that sum to 1.0",
+              "selected_answer": "one element from X_options",
+              "justification": "concise explanation that references the earlier reasoning and explicitly connects it to the chosen option"
+            },
+            "verbal_pattern": "Based on the logical reasoning in Z4_logical_reasoning, assign a probability to each answer option being correct, choose the most probable option as the final answer, and explain why this option is preferred over the others."
+          }
+        ],
+        "instance_fields": {
+          "description": "Shape of a filled vPGM instance for a single ScienceQA question under the 4 latent template.",
+          "required_top_level_keys": [
+            "template_id",
+            "question_meta",
+            "observed",
+            "latent_posteriors",
+            "answer_posterior"
+          ],
+          "template_id": "scienceqa_vpgm_4latent_generic",
+          "question_meta": {
+            "scienceqa_id": "string",
+            "subject": "string",
+            "topic": "string",
+            "category": "string",
+            "skill": "string",
+            "grade": "integer"
+          },
+          "observed": {
+            "question_text": "string",
+            "options": "list[string]",
+            "image_caption_optional": "string_or_null",
+            "text_context_optional": "string_or_null",
+            "lecture_optional": "string_or_null",
+            "retrieved_knowledge_optional": "string_or_null"
+          },
+          "latent_posteriors": {
+            "Z1_relevance_assessment": {
+              "state_probabilities": "dict[state -> float]",
+              "justification": "string"
+            },
+            "Z2_knowledge_quality": {
+              "state_probabilities": "dict[state -> float]",
+              "justification": "string"
+            },
+            "Z3_question_clarity": {
+              "state_probabilities": "dict[state -> float]",
+              "justification": "string"
+            },
+            "Z4_logical_reasoning": {
+              "state_probabilities": "dict[state -> float]",
+              "justification": "string"
+            }
+          },
+          "answer_posterior": {
+            "option_probabilities": "dict[option_label_or_index -> float]",
+            "selected_answer": "string",
+            "justification": "string"
+          }
+        }
+      },
+      {
+        "id": "scienceqa_vpgm_2latent_simplified",
+        "name": "ScienceQA vPGM with 2 latent variables (Z1, Z2)",
+        "based_on": "vPGM ScienceQA case study with 2 latent variables",
+        "applicability": {
+          "description": "Simplified template for ScienceQA when a compact model is preferred, for example for ablation or low budget settings. Treats all observed signals as X and uses two latent variables capturing knowledge and modality consistency, followed directly by the answer distribution.",
+          "supports_modalities": {
+            "question_text": true,
+            "answer_options": true,
+            "image": "optional",
+            "text_context": "optional",
+            "lecture": "optional",
+            "retrieved_knowledge": "optional"
+          }
+        },
+        "observed_variables": [
+          {
+            "name": "X_all",
+            "role": "aggregated_observations",
+            "type": "structured_string",
+            "description": "Single concatenated view of all observed information (question, options, image caption, text context, lecture, retrieved knowledge) formatted in a consistent textual layout for the LLM."
+          }
+        ],
+        "latent_variables": [
+          {
+            "name": "Z1_context_and_knowledge_relevance",
+            "states": ["very_low", "low", "medium", "high", "very_high"],
+            "description": "How well the combined context and retrieved knowledge capture the essential information needed to answer the question."
+          },
+          {
+            "name": "Z2_multimodal_consistency",
+            "states": ["very_low", "low", "medium", "high", "very_high"],
+            "description": "How consistent the visual and textual information are with one another and with the question when interpreted using the available knowledge."
+          }
+        ],
+        "graph_structure": {
+          "nodes": [
+            "X_all",
+            "Z1_context_and_knowledge_relevance",
+            "Z2_multimodal_consistency",
+            "Y"
+          ],
+          "edges": [
+            ["X_all", "Z1_context_and_knowledge_relevance"],
+            ["Z1_context_and_knowledge_relevance", "Z2_multimodal_consistency"],
+            ["Z1_context_and_knowledge_relevance", "Y"],
+            ["Z2_multimodal_consistency", "Y"]
+          ],
+          "answer_node": "Y",
+          "answer_states_source": "X_options_implicit",
+          "informal_factorization": "P(Z1 | X_all) * P(Z2 | Z1, X_all) * P(Y | Z1, Z2)"
+        },
+        "verbal_cpd_templates": [
+          {
+            "id": "cpd_Z1_given_Xall",
+            "target": "Z1_context_and_knowledge_relevance",
+            "given": ["X_all"],
+            "output_format": {
+              "state_probabilities": "dict[state -> float] that sum to 1.0",
+              "justification": "short paragraph"
+            },
+            "verbal_pattern": "From the combined view X_all, judge how well the available context and knowledge capture the essential information needed to solve the question. Output probabilities over the states of Z1_context_and_knowledge_relevance."
+          },
+          {
+            "id": "cpd_Z2_given_Z1_Xall",
+            "target": "Z2_multimodal_consistency",
+            "given": [
+              "Z1_context_and_knowledge_relevance",
+              "X_all"
+            ],
+            "output_format": {
+              "state_probabilities": "dict[state -> float] that sum to 1.0",
+              "justification": "short paragraph"
+            },
+            "verbal_pattern": "Using the assessment in Z1_context_and_knowledge_relevance and the combined view X_all, evaluate how consistent the visual and textual information are with one another and with the question. Output probabilities over the states of Z2_multimodal_consistency."
+          },
+          {
+            "id": "cpd_Y_given_Z1_Z2",
+            "target": "Y",
+            "given": [
+              "Z1_context_and_knowledge_relevance",
+              "Z2_multimodal_consistency"
+            ],
+            "output_format": {
+              "option_probabilities": "dict[option_label_or_index -> float] that sum to 1.0",
+              "selected_answer": "string",
+              "justification": "string"
+            },
+            "verbal_pattern": "Combine the relevance and consistency assessments to assign probabilities to each answer option, select the most probable one as the final answer, and explain the choice."
+          }
+        ],
+        "instance_fields": {
+          "description": "Shape of a filled vPGM instance for a single ScienceQA question under the 2 latent template.",
+          "required_top_level_keys": [
+            "template_id",
+            "question_meta",
+            "observed",
+            "latent_posteriors",
+            "answer_posterior"
+          ],
+          "template_id": "scienceqa_vpgm_2latent_simplified",
+          "question_meta": {
+            "scienceqa_id": "string",
+            "subject": "string",
+            "topic": "string",
+            "category": "string",
+            "skill": "string",
+            "grade": "integer"
+          },
+          "observed": {
+            "X_all": "string"
+          },
+          "latent_posteriors": {
+            "Z1_context_and_knowledge_relevance": {
+              "state_probabilities": "dict[state -> float]",
+              "justification": "string"
+            },
+            "Z2_multimodal_consistency": {
+              "state_probabilities": "dict[state -> float]",
+              "justification": "string"
+            }
+          },
+          "answer_posterior": {
+            "option_probabilities": "dict[option_label_or_index -> float]",
+            "selected_answer": "string",
+            "justification": "string"
+          }
+        }
+      }
+    ]
+  }
+  
