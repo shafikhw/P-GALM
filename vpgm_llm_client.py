@@ -227,7 +227,7 @@ def infer_vpgm_for_skeleton(
     """
     template = get_template_by_id(template_full, template_id)
     prompt = build_vpgm_prompt(skeleton, template)
-    
+    # print (prompt)
     last_error = None
     
     for attempt in range(max_retries):
